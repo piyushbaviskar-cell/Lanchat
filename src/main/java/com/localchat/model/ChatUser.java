@@ -20,6 +20,9 @@ public class ChatUser {
     // Derived from the last octet of the IP address
     private String displayName;
 
+    // Device classification: MOBILE, TABLET, DESKTOP
+    private String deviceType;
+
     // The WebSocket session ID assigned by Spring on connect
     // Used internally to map a disconnect event back to the right user
     private String sessionId;

@@ -9,7 +9,11 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,6 +23,9 @@ public class ChatController {
 
     private final MessageStore messageStore;
     private final SimpMessageSendingOperations messaging;
+
+    @Value("${app.chat.password:}")
+    private String roomPassword;
 
     // Constructor injection — keeps dependencies explicit and testable
     public ChatController(MessageStore messageStore,
@@ -38,6 +45,7 @@ public class ChatController {
         // This is the only place IP should ever be read — never trust
         // anything the client sends in the message body itself
         String ip = (String) accessor.getSessionAttributes().get("ip");
+        String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
         String displayName = ChatUser.deriveDisplayName(ip);
 
         // Store the username in the session so SessionService can
@@ -49,6 +57,7 @@ public class ChatController {
             .type(ChatMessage.Type.JOIN)
             .senderIp(ip)
             .senderName(displayName)
+            .deviceType(deviceType)
             .content(displayName + " joined the chat")
             .timestamp(Instant.now())
             .build();
@@ -69,6 +78,7 @@ public class ChatController {
 
         // Again — IP comes from the session, never from the client payload
         String ip = (String) accessor.getSessionAttributes().get("ip");
+        String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
         String displayName = ChatUser.deriveDisplayName(ip);
 
         // Reject empty or blank messages before they touch the store
@@ -89,6 +99,7 @@ public class ChatController {
             .content(safeContent)
             .senderIp(ip)
             .senderName(displayName)
+            .deviceType(deviceType)
             .timestamp(Instant.now())
             .build();
 
@@ -101,16 +112,22 @@ public class ChatController {
     // Maps to GET http://<your-ip>:8080/api/messages
     @GetMapping("/api/messages")
     @ResponseBody
-    public List<ChatMessage> getMessageHistory() {
-        return messageStore.getAllMessages();
+    public ResponseEntity<List<ChatMessage>> getMessageHistory(@RequestHeader(value = "X-Room-Password", required = false) String password) {
+        if (!roomPassword.isEmpty() && !roomPassword.equals(password)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(messageStore.getAllMessages());
     }
 
     // REST endpoint — returns the list of currently connected users
     // Maps to GET http://<your-ip>:8080/api/users
     @GetMapping("/api/users")
     @ResponseBody
-    public List<ChatUser> getActiveUsers() {
-        return messageStore.getActiveUsers();
+    public ResponseEntity<List<ChatUser>> getActiveUsers(@RequestHeader(value = "X-Room-Password", required = false) String password) {
+        if (!roomPassword.isEmpty() && !roomPassword.equals(password)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(messageStore.getActiveUsers());
     }
  // Handles typing indicator events
  // Client sends to "/app/chat.typing"

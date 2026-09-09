@@ -38,6 +38,7 @@ function ChatBubble({ message, myIp }) {
 
         {/* Show full IP as the sender name */}
         <span className={`message-sender sc-${colorIndex}`}>
+          {message.deviceType === 'MOBILE' || message.deviceType === 'TABLET' ? '📱 ' : '💻 '}
           {isMine ? `You (${message.senderIp})` : message.senderIp}
         </span>
 

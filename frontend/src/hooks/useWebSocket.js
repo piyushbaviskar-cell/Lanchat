@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs.min.js';
 
-export function useWebSocket() {
+export function useWebSocket(password) {
   const clientRef = useRef(null);
+  const [authError, setAuthError] = useState(false);
 
   const [messages,      setMessages]      = useState([]);
   const [users,         setUsers]         = useState([]);
@@ -17,8 +18,11 @@ export function useWebSocket() {
   const typingTimerRef = useRef(null);
 
   useEffect(() => {
+    if (!password) return;
+    setAuthError(false);
+
     const client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
+      webSocketFactory: () => new SockJS('/ws?password=' + encodeURIComponent(password)),
 
       onConnect: () => {
         setConnected(true);
@@ -37,8 +41,9 @@ export function useWebSocket() {
               prev.find(u => u.ip === msg.senderIp)
                 ? prev
                 : [...prev, {
-                    name: msg.senderIp,  // show full IP as name
+                    name: msg.senderIp,
                     ip:   msg.senderIp,
+                    deviceType: msg.deviceType
                   }]
             );
             setMessages(prev => [...prev, msg]);
@@ -75,19 +80,26 @@ export function useWebSocket() {
         });
 
         // Load history and users
-        fetch('/api/messages')
-          .then(res => res.json())
+        fetch('/api/messages', { headers: { 'X-Room-Password': password } })
+          .then(res => {
+              if (res.status === 401) throw new Error('Unauthorized');
+              return res.json();
+          })
           .then(history => {
             if (history.length > 0) setMessages(history);
           })
-          .catch(() => console.warn('[LocalChat] Could not load history'));
+          .catch((err) => {
+              if (err.message === 'Unauthorized') setAuthError(true);
+              console.warn('[LocalChat] Could not load history')
+          });
 
-        fetch('/api/users')
+        fetch('/api/users', { headers: { 'X-Room-Password': password } })
           .then(res => res.json())
           .then(activeUsers => {
             setUsers(activeUsers.map(u => ({
-              name: u.ip,         // full IP as display name
+              name: u.ip,
               ip:   u.ip,
+              deviceType: u.deviceType
             })));
           })
           .catch(() => console.warn('[LocalChat] Could not load users'));
@@ -111,7 +123,7 @@ export function useWebSocket() {
     clientRef.current = client;
     client.activate();
     return () => client.deactivate();
-  }, []);
+  }, [password]);
 
   // Sends a typing event — throttled so we don't spam the server
   // Called by InputBar every time the user presses a key
@@ -151,6 +163,7 @@ export function useWebSocket() {
     messages,
     users,
     connected,
+    authError,
     myIp,
     myName,
     typingUsers,

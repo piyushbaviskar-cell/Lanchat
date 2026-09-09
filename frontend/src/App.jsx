@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { useWebSocket }  from './hooks/useWebSocket';
 import MessageBubble     from './components/MessageBubble';
@@ -6,7 +6,11 @@ import UserList          from './components/UserList';
 import InputBar          from './components/InputBar';
 
 export default function App() {
-  const { messages, users, connected, myIp,myName,typingUsers,  sendMessage,sendTyping, } = useWebSocket();
+  const [password, setPassword] = useState('');
+  const [hasJoined, setHasJoined] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+
+  const { messages, users, connected, authError, myIp, myName, typingUsers,  sendMessage,sendTyping, } = useWebSocket(password);
 
   // Ref attached to the bottom of the message list
   // Used to auto-scroll when new messages arrive
@@ -17,6 +21,28 @@ export default function App() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // If we have an auth error after trying to join, go back
+  useEffect(() => {
+      if (authError && hasJoined) {
+          setHasJoined(false);
+          setPassword('');
+      }
+  }, [authError, hasJoined]);
+
+  if (!hasJoined) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px', background: 'var(--bg-base)', fontFamily: 'var(--sans)' }}>
+         <h1 style={{color: 'white', fontSize: '2rem'}}>localchat</h1>
+         <div style={{color: 'var(--muted)', marginTop: '-10px', marginBottom: '20px'}}>Enter room password to join</div>
+         {authError && <div style={{color: '#ff4444', marginBottom: '10px'}}>Incorrect password</div>}
+         <form onSubmit={(e) => { e.preventDefault(); setPassword(passwordInput); setHasJoined(true); }} style={{display: 'flex'}}>
+           <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} placeholder="Password" style={{padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', marginRight: '10px', outline: 'none'}} autoFocus />
+           <button type="submit" style={{padding: '10px 20px', borderRadius: '4px', background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold'}}>Join</button>
+         </form>
+      </div>
+    );
+  }
 
   // ── Connection status label ──────────────────────────────────────────
   const statusLabel = connected ? 'Connected' : 'Reconnecting…';

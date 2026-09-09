@@ -32,6 +32,9 @@ public class ChatMessage {
     // Friendly display name derived from IP e.g. "User 42"
     private String senderName;
 
+    // Device type of sender
+    private String deviceType;
+
     // Set server-side at the moment the message is received
     private Instant timestamp;
 }

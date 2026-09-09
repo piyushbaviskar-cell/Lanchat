@@ -23,7 +23,10 @@ function UserItem({ user, isMe }) {
       </div>
 
       <div className="user-info">
-        <div className="user-name">{user.ip}</div>
+        <div className="user-name">
+          {user.deviceType === 'MOBILE' || user.deviceType === 'TABLET' ? '📱 ' : '💻 '}
+          {user.ip}
+        </div>
         {isMe && (
           <div className="user-ip">your device</div>
         )}

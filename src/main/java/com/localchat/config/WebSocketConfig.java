@@ -9,12 +9,17 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Value("${app.chat.password:}")
+    private String roomPassword;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -43,6 +48,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         WebSocketHandler wsHandler,
                         Map<String, Object> attributes) {
 
+                    // Check password
+                    String query = request.getURI().getQuery();
+                    if (!roomPassword.isEmpty()) {
+                        boolean authSuccess = false;
+                        if (query != null && query.contains("password=" + roomPassword)) {
+                            authSuccess = true;
+                        }
+                        if (!authSuccess) {
+                            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return false;
+                        }
+                    }
+
                     String ip = request.getHeaders()
                                        .getFirst("X-Forwarded-For");
                     if (ip == null || ip.isBlank()) {
@@ -51,6 +69,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                     .getHostAddress();
                     }
                     attributes.put("ip", ip);
+
+                    // Parse device type from User-Agent
+                    String userAgent = request.getHeaders().getFirst("User-Agent");
+                    String deviceType = "DESKTOP";
+                    if (userAgent != null) {
+                        String ua = userAgent.toLowerCase();
+                        if (ua.contains("tablet") || ua.contains("ipad")) {
+                            deviceType = "TABLET";
+                        } else if (ua.contains("mobi") || ua.contains("android") || ua.contains("iphone")) {
+                            deviceType = "MOBILE";
+                        }
+                    }
+                    attributes.put("deviceType", deviceType);
+
                     return true;
                 }
 

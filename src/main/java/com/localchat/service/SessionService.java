@@ -34,11 +34,13 @@ public class SessionService {
 
         String sessionId = accessor.getSessionId();
         String ip = (String) accessor.getSessionAttributes().get("ip");
+        String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
 
         // Build the user object and store it immediately on connect
         ChatUser user = ChatUser.builder()
             .ip(ip)
             .displayName(ChatUser.deriveDisplayName(ip))
+            .deviceType(deviceType)
             .sessionId(sessionId)
             .joinedAt(Instant.now())
             .build();
