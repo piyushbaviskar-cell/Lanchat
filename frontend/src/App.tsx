@@ -197,25 +197,32 @@ function ChatApp() {
   );
 }
 
-export default function App() {
-  const [location, setLocation] = useLocation();
-
-  const handleJoin = React.useCallback(() => {
-    setLocation('/chat');
-  }, [setLocation]);
-
+const HomeRoute = () => {
+  const [, setLocation] = useLocation();
+  const handleJoin = React.useCallback(() => setLocation('/chat'), [setLocation]);
   return (
-    <Switch>
-      <Route path="/">
-        <LandingPage onJoin={handleJoin} />
-      </Route>
-      <Route path="/chat">
-        <ChatApp />
-      </Route>
-      {/* Fallback to landing page */}
-      <Route>
-        <LandingPage onJoin={handleJoin} />
-      </Route>
-    </Switch>
+    <div className="flex-1 min-h-0 overflow-y-auto w-full">
+      <LandingPage onJoin={handleJoin} />
+    </div>
+  );
+};
+
+export default function App() {
+  const [location] = useLocation();
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+      className="relative flex flex-col h-[100dvh] h-screen w-full bg-white dark:bg-neutral-950 font-sans overflow-hidden app-shell"
+    >
+      <div className="flex-1 min-h-0 w-full relative z-0 flex flex-col">
+        <Switch>
+          <Route path="/" component={HomeRoute} />
+          <Route path="/chat" component={ChatApp} />
+          {/* Fallback to landing page */}
+          <Route component={HomeRoute} />
+        </Switch>
+      </div>
+    </motion.div>
   );
 }
