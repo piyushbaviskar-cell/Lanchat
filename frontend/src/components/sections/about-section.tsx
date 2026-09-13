@@ -41,7 +41,7 @@ export function AboutSection() {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className="bg-gradient-to-b from-black/10 to-white/10 dark:from-white/10 dark:to-black/10 p-px rounded-2xl"
             >
-              <div className="h-full rounded-[1.15rem] backdrop-blur-md bg-white/95 dark:bg-black/95 border border-black/10 dark:border-white/10 p-6 text-left">
+              <div className="h-full rounded-[1.15rem] bg-white/95 dark:bg-black/95 border border-black/10 dark:border-white/10 p-6 text-left">
                 <h3 className="font-semibold text-black dark:text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">{item.desc}</p>
               </div>

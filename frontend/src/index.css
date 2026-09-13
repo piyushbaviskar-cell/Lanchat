@@ -122,3 +122,7 @@
 .message-group:hover .actions-row {
   opacity: 1;
 }
+
+/* Path animation is now handled by Framer Motion using only
+   compositor-safe properties (opacity + transform/x/y).
+   No CSS keyframes needed. */
