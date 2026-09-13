@@ -30,16 +30,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-            .setAllowedOriginPatterns(
-                // Standard LAN ranges
-                "http://192.168.*.*",
-                "http://10.*.*.*",
-                // Your specific range from the error logs (172.25.x.x)
-                "http://172.*.*.*",
-                // Vite dev server on any port
-                "http://localhost:*",
-                "http://127.0.0.1:*"
-            )
+            .setAllowedOriginPatterns("*")
             .addInterceptors(new HandshakeInterceptor() {
                 @Override
                 public boolean beforeHandshake(
@@ -48,8 +39,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         WebSocketHandler wsHandler,
                         Map<String, Object> attributes) {
 
-                    // Check password
+                    // Check password & extract clientId
                     String query = request.getURI().getQuery();
+                    if (query != null) {
+                        for (String param : query.split("&")) {
+                            if (param.startsWith("clientId=")) {
+                                attributes.put("clientId", param.split("=")[1]);
+                            }
+                        }
+                    }
+
                     if (!roomPassword.isEmpty()) {
                         boolean authSuccess = false;
                         if (query != null && query.contains("password=" + roomPassword)) {
@@ -92,7 +91,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         ServerHttpResponse response,
                         WebSocketHandler wsHandler,
                         Exception exception) {}
-            })
-            .withSockJS();
+            });
     }
 }

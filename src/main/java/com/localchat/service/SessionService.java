@@ -35,6 +35,8 @@ public class SessionService {
         String sessionId = accessor.getSessionId();
         String ip = (String) accessor.getSessionAttributes().get("ip");
         String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
+        String clientId = (String) accessor.getSessionAttributes().get("clientId");
+        if (clientId == null) clientId = sessionId; // Fallback
 
         // Build the user object and store it immediately on connect
         ChatUser user = ChatUser.builder()
@@ -42,6 +44,7 @@ public class SessionService {
             .displayName(ChatUser.deriveDisplayName(ip))
             .deviceType(deviceType)
             .sessionId(sessionId)
+            .clientId(clientId)
             .joinedAt(Instant.now())
             .build();
 
@@ -79,6 +82,7 @@ public class SessionService {
             .type(ChatMessage.Type.LEAVE)
             .senderName(user.getDisplayName())
             .senderIp(user.getIp())
+            .senderClientId(user.getClientId())
             .timestamp(Instant.now())
             .build();
 

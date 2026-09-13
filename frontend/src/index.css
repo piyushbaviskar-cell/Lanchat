@@ -1,419 +1,124 @@
-/* Google Fonts import — DM Sans for UI, IBM Plex Mono for IPs and badges */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 
-/* ── Design tokens ───────────────────────────────────────────────────── */
-:root {
-  --bg:        #0f1117;
-  --surface:   #181c27;
-  --surface2:  #1e2333;
-  --border:    rgba(255, 255, 255, 0.07);
-  --border-md: rgba(255, 255, 255, 0.12);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --accent:    #4f7fff;
-  --accent-bg: rgba(79, 127, 255, 0.12);
-  --accent-bd: rgba(79, 127, 255, 0.25);
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 0 0% 3.9%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 96.1%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 89.8%;
+    --sidebar-ring: 0 0% 3.9%;
+  }
 
-  --green:     #3ecf8e;
-  --green-bg:  rgba(62, 207, 142, 0.12);
-
-  --red:       #f87171;
-  --red-bg:    rgba(248, 113, 113, 0.10);
-
-  --text:      #e2e6f0;
-  --muted:     #6b7280;
-  --hint:      #3d4251;
-
-  --sans: 'DM Sans', sans-serif;
-  --mono: 'IBM Plex Mono', monospace;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar: 0 0% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 224 76% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 14.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%;
+    --sidebar-ring: 0 0% 83.1%;
+  }
 }
 
-/* ── Reset ───────────────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+.topbar, .input-bar {
+  backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--background, rgba(255, 255, 255, 0.8)) 70%, transparent);
 }
 
-body {
-  font-family: var(--sans);
-  font-size: 14px;
-  background: var(--bg);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
+.input-field:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--accent-bg, rgba(79, 127, 255, 0.2));
 }
 
-/* ── Scrollbar styling ───────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 3px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
 ::-webkit-scrollbar-thumb {
-  background: var(--border-md);
-  border-radius: 2px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.15s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  border-width: 0px; 
 }
 
-/* ── App shell layout ────────────────────────────────────────────────── */
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--bg);
+.message-group:hover .message-bubble {
+  transform: translateY(-1px);
 }
 
-/* ── Top bar ─────────────────────────────────────────────────────────── */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+.message-group .actions-row {
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.topbar-logo {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
-  letter-spacing: 0.04em;
+.message-group:hover .actions-row {
+  opacity: 1;
 }
-
-.topbar-badge {
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-bd);
-}
-
-.topbar-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--green);
-  flex-shrink: 0;
-}
-
-.status-dot.offline {
-  background: var(--red);
-}
-
-/* ── Main workspace ──────────────────────────────────────────────────── */
-.workspace {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* ── Sidebar ─────────────────────────────────────────────────────────── */
-.sidebar {
-  width: 190px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  padding: 10px 14px;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.sidebar-users {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.sidebar-footer {
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.6;
-  flex-shrink: 0;
-}
-
-.sidebar-footer span {
-  color: var(--red);
-}
-
-/* ── User item ───────────────────────────────────────────────────────── */
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 14px;
-  transition: background 0.1s;
-}
-
-.user-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-ip {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-you-badge {
-  font-family: var(--mono);
-  font-size: 9px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-bd);
-  flex-shrink: 0;
-}
-
-.user-online-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  flex-shrink: 0;
-}
-
-/* ── Chat area ───────────────────────────────────────────────────────── */
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ── Message list ────────────────────────────────────────────────────── */
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 16px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* ── System messages ─────────────────────────────────────────────────── */
-.sys-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.sys-message::before,
-.sys-message::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-/* ── Chat message bubble ─────────────────────────────────────────────── */
-.message-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 4px;
-}
-
-.message-header {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  margin-bottom: 3px;
-  padding-left: 2px;
-}
-
-.message-sender {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.message-ip {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-}
-
-.message-time {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--hint);
-}
-
-.message-bubble {
-  display: inline-block;
-  max-width: 85%;
-  padding: 8px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--text);
-  word-break: break-word;
-}
-
-.message-bubble.mine {
-  background: var(--accent-bg);
-  border-color: var(--accent-bd);
-  color: #d4ddff;
-  align-self: flex-end;
-}
-
-/* ── Input bar ───────────────────────────────────────────────────────── */
-.input-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.input-field {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border-md);
-  border-radius: var(--radius-md);
-  padding: 9px 14px;
-  font-size: 13px;
-  font-family: var(--sans);
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.input-field::placeholder {
-  color: var(--muted);
-}
-
-.input-field:focus {
-  border-color: var(--accent-bd);
-}
-
-.input-field:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.send-button {
-  width: 36px;
-  height: 36px;
-  background: var(--accent);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: opacity 0.15s, transform 0.1s;
-}
-
-.send-button:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.send-button:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.send-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.send-button svg {
-  width: 15px;
-  height: 15px;
-  fill: white;
-}
-
-/* ── Avatar colour variants ──────────────────────────────────────────── */
-/* Assigned by cycling through these based on user index in the list    */
-.av-0 { background: rgba(79,127,255,0.18); color: #4f7fff; border: 1px solid rgba(79,127,255,0.3); }
-.av-1 { background: rgba(124,92,250,0.18); color: #a78bfa; border: 1px solid rgba(124,92,250,0.3); }
-.av-2 { background: rgba(62,207,142,0.15); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.3); }
-.av-3 { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
-.av-4 { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
-.av-5 { background: rgba(34,211,238,0.12); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
-
-/* ── Sender name colour variants ─────────────────────────────────────── */
-.sc-0 { color: #4f7fff; }
-.sc-1 { color: #a78bfa; }
-.sc-2 { color: #3ecf8e; }
-.sc-3 { color: #fbbf24; }
-.sc-4 { color: #f87171; }
-.sc-5 { color: #22d3ee; }

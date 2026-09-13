@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,6 +46,10 @@ public class ChatController {
         // This is the only place IP should ever be read — never trust
         // anything the client sends in the message body itself
         String ip = (String) accessor.getSessionAttributes().get("ip");
+        String clientId = (String) accessor.getSessionAttributes().get("clientId");
+        if (ip == null) ip = "Unknown";
+        if (clientId == null) clientId = accessor.getSessionId();
+
         String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
         String displayName = ChatUser.deriveDisplayName(ip);
 
@@ -56,6 +61,7 @@ public class ChatController {
         ChatMessage joinMessage = ChatMessage.builder()
             .type(ChatMessage.Type.JOIN)
             .senderIp(ip)
+            .senderClientId(clientId)
             .senderName(displayName)
             .deviceType(deviceType)
             .content(displayName + " joined the chat")
@@ -78,8 +84,17 @@ public class ChatController {
 
         // Again — IP comes from the session, never from the client payload
         String ip = (String) accessor.getSessionAttributes().get("ip");
+        String clientId = (String) accessor.getSessionAttributes().get("clientId");
+        if (ip == null) ip = "Unknown";
+        if (clientId == null) clientId = accessor.getSessionId();
         String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
-        String displayName = ChatUser.deriveDisplayName(ip);
+
+        message.setSenderIp(ip);
+        message.setSenderClientId(clientId);
+        message.setSenderName(ChatUser.deriveDisplayName(ip));
+        message.setDeviceType(deviceType);
+        message.setType(ChatMessage.Type.CHAT);
+        message.setTimestamp(Instant.now());
 
         // Reject empty or blank messages before they touch the store
         if (message.getContent() == null || message.getContent().isBlank()) {
@@ -92,12 +107,15 @@ public class ChatController {
             safeContent = safeContent.substring(0, 1000);
         }
 
+        String displayName = ChatUser.deriveDisplayName(ip);
+
         // Build the verified message — overwrite anything the client sent
         // in the senderIp or senderName fields with server-side values
         ChatMessage chatMessage = ChatMessage.builder()
             .type(ChatMessage.Type.CHAT)
             .content(safeContent)
             .senderIp(ip)
+            .senderClientId(clientId)
             .senderName(displayName)
             .deviceType(deviceType)
             .timestamp(Instant.now())
@@ -129,6 +147,17 @@ public class ChatController {
         }
         return ResponseEntity.ok(messageStore.getActiveUsers());
     }
+
+    // REST endpoint — returns the caller's IP address
+    @GetMapping("/api/me")
+    @ResponseBody
+    public ResponseEntity<String> getMyIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank()) {
+            ip = request.getRemoteAddr();
+        }
+        return ResponseEntity.ok(ip);
+    }
  // Handles typing indicator events
  // Client sends to "/app/chat.typing"
  // Server broadcasts to "/topic/public" so everyone sees it
@@ -137,9 +166,13 @@ public class ChatController {
      String ip         = (String) accessor.getSessionAttributes().get("ip");
      String displayName = ChatUser.deriveDisplayName(ip);
 
+     String clientId   = (String) accessor.getSessionAttributes().get("clientId");
+     if (clientId == null) clientId = accessor.getSessionId();
+
      ChatMessage typingMessage = ChatMessage.builder()
          .type(ChatMessage.Type.TYPING)
          .senderIp(ip)
+         .senderClientId(clientId)
          .senderName(displayName)
          .timestamp(Instant.now())
          .build();
