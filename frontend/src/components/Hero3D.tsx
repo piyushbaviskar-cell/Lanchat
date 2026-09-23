@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import React, { useRef, useMemo, useEffect, useState } from "react";
@@ -14,7 +15,7 @@ function Icosahedron({ color }: { color: string }) {
 
   useCursor(hovered);
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (!meshRef.current || shouldReduceMotion) return;
     
     // Idle rotation

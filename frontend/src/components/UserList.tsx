@@ -1,83 +1,60 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-
-function getColorIndex(ip: string = '') {
-  let sum = 0;
-  for (let i = 0; i < ip.length; i++) {
-    sum += ip.charCodeAt(i);
-  }
-  return sum % 6;
-}
-
-function getAvatarLabel(clientId: string = '') {
-  if (!clientId || clientId.length < 2) return '?';
-  return clientId.substring(0, 2).toUpperCase();
-}
-
-const colorClasses = [
-  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-];
+import { Search, Star, Smartphone, Laptop, X, Users, UserCheck } from 'lucide-react';
+import { tacticalContactsService } from '../services/TacticalContactsService';
 
 export interface User {
   clientId: string;
-  deviceType?: string;
+  displayName?: string;
+  deviceType?: 'MOBILE' | 'DESKTOP' | 'TABLET' | string;
 }
 
-interface UserItemProps {
-  user: User;
-  isMe: boolean;
-}
-
-function UserItem({ user, isMe }: UserItemProps) {
-  const colorIndex = getColorIndex(user.clientId);
-  const displayName = `User ${user.clientId?.substring(0, 4).toUpperCase()}`;
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, x: -8, height: 0, marginBottom: 0 }}
-      animate={{ opacity: 1, x: 0, height: 'auto', marginBottom: 8 }}
-      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-      transition={{ opacity: { duration: 0.2 }, height: { duration: 0.2 }, x: { type: "spring", stiffness: 200, damping: 20 } }}
-      className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-black/5 dark:hover:border-white/10 overflow-hidden"
-    >
-      <div className={`w-11 h-11 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm sm:text-xs font-bold shrink-0 ${colorClasses[colorIndex]}`}>
-        {getAvatarLabel(user.clientId)}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="text-base sm:text-sm font-medium text-black dark:text-white truncate">
-          {user.deviceType === 'MOBILE' || user.deviceType === 'TABLET' ? '📱 ' : '💻 '}
-          {displayName}
-        </div>
-        {isMe && (
-          <div className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider font-semibold">your device</div>
-        )}
-      </div>
-
-      {isMe
-        ? <span className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-md shrink-0">you</span>
-        : <span className="w-2.5 h-2.5 sm:w-2 sm:h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-      }
-    </motion.div>
-  );
-}
-
-export interface UserListProps {
+interface UserListProps {
   users: User[];
   myIp?: string;
   myClientId?: string;
-  typingUsers: string[];
+  typingUsers?: string[];
   isOpen: boolean;
   onClose: () => void;
+  onOpenIdentityModal?: () => void;
 }
 
-export default function UserList({ users, myIp, myClientId, typingUsers, isOpen, onClose }: UserListProps) {
+export default function UserList({
+  users,
+  myClientId,
+  isOpen,
+  onClose,
+  onOpenIdentityModal
+}: UserListProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
+
+  const handleToggleFavorite = async (user: User) => {
+    const key = user.clientId;
+    const nextState = !favoriteMap[key];
+    setFavoriteMap(prev => ({ ...prev, [key]: nextState }));
+
+    await tacticalContactsService.upsertContact({
+      publicKeyFingerprint: user.clientId,
+      rawPublicKey: user.clientId,
+      declaredFullName: user.displayName || user.clientId,
+      petname: user.displayName || user.clientId,
+      isFavorite: nextState,
+      trustStatus: 'VERIFIED_IN_PERSON',
+      transportsAvailable: ['LOCAL_MESH'],
+      lastKnownVector: {
+        timestamp: Date.now(),
+        transport: 'LOCAL_MESH'
+      }
+    });
+  };
+
+  const filteredUsers = users.filter(u => {
+    const name = (u.displayName || u.clientId || '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+    return name.includes(q) || u.clientId.toLowerCase().includes(q);
+  });
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -88,69 +65,116 @@ export default function UserList({ users, myIp, myClientId, typingUsers, isOpen,
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden"
           />
         )}
       </AnimatePresence>
 
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-50
-        w-[80vw] max-w-[320px] md:w-64 flex-shrink-0 flex flex-col h-full 
-        bg-white dark:bg-neutral-950 md:bg-white md:dark:bg-neutral-950
-        border-r border-black/10 dark:border-white/10
-        transition-transform duration-300 ease-in-out
+        fixed md:static inset-y-0 left-0 z-40
+        w-[85vw] max-w-[320px] md:w-72 flex-shrink-0 flex flex-col h-full 
+        bg-[#090d18] border-r border-neutral-800
+        transition-transform duration-300 ease-in-out font-mono
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="flex items-center justify-between px-4 py-4 md:py-3 border-b border-black/10 dark:border-white/10">
-          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 tracking-wider uppercase">
-            Online — {users.length}
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-800 bg-neutral-900/50">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-green-400" />
+            <span className="text-xs font-bold text-white tracking-wider uppercase">
+              MESH NODES ({users.length})
+            </span>
           </div>
-          <button onClick={onClose} className="p-2 md:hidden text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white">
+          <button onClick={onClose} className="p-1 md:hidden text-neutral-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 scroll-smooth">
-          {users.length === 0 ? (
-            <div className="p-4 text-xs text-neutral-500 dark:text-neutral-400 font-mono text-center">
-              Connecting…
+        {/* Directory Search */}
+        <div className="p-3 border-b border-neutral-800 bg-[#0b0f1a]">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-neutral-500" />
+            <input
+              type="text"
+              placeholder="Search callsign or #tag..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-[#131929] border border-neutral-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-green-400 placeholder:text-neutral-500 focus:outline-none focus:border-green-500/80"
+            />
+          </div>
+        </div>
+
+        {/* User Items */}
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+          {filteredUsers.length === 0 ? (
+            <div className="p-4 text-xs text-neutral-500 text-center">
+              {searchQuery ? 'No matching nodes' : 'Scanning local hotspot mesh...'}
             </div>
           ) : (
-            <AnimatePresence mode="popLayout">
-              {users.map(user => (
-                <UserItem
+            filteredUsers.map(user => {
+              const isMe = user.clientId === myClientId;
+              const isFav = favoriteMap[user.clientId];
+              const isMobile = user.deviceType === 'MOBILE' || user.deviceType === 'TABLET';
+
+              return (
+                <div
                   key={user.clientId}
-                  user={user}
-                  isMe={user.clientId === myClientId}
-                />
-              ))}
-            </AnimatePresence>
+                  className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                    isMe
+                      ? 'bg-indigo-950/30 border-indigo-800/40 text-white'
+                      : 'bg-neutral-900/40 border-neutral-800/80 hover:bg-neutral-900 text-neutral-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="text-sm shrink-0">
+                      {isMobile ? <Smartphone className="w-4 h-4 text-indigo-400" /> : <Laptop className="w-4 h-4 text-green-400" />}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold truncate flex items-center gap-1.5">
+                        <span className="truncate">{user.displayName || user.clientId}</span>
+                        {isMe && (
+                          <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.2 rounded border border-indigo-500/30">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-neutral-500 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                        <span>{isMobile ? 'Mobile Hotspot' : 'Desktop Node'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                    {!isMe && (
+                      <button
+                        onClick={() => handleToggleFavorite(user)}
+                        className="p-1.5 text-neutral-500 hover:text-amber-400 transition-colors"
+                        title="Add to Favorites"
+                      >
+                        <Star className={`w-3.5 h-3.5 ${isFav ? 'text-amber-400 fill-amber-400' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {typingUsers.filter(id => id !== myClientId).length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-4 py-3 md:py-2 text-[11px] font-mono text-black dark:text-white border-t border-black/10 dark:border-white/10 overflow-hidden"
+        {/* Callsign / Rename Banner */}
+        {onOpenIdentityModal && (
+          <div className="p-3 border-t border-neutral-800 bg-neutral-900/60">
+            <button
+              onClick={onOpenIdentityModal}
+              className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-xs font-bold text-neutral-200 flex items-center justify-center gap-2 transition-colors"
             >
-              {typingUsers
-                .filter(id => id !== myClientId)
-                .map(id => `User ${id.substring(0, 4).toUpperCase()}`)
-                .join(', ')
-              } is typing…
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="p-4 md:p-6 text-[11px] text-neutral-500 dark:text-neutral-400 border-t border-black/10 dark:border-white/10 leading-relaxed bg-black/[0.01] dark:bg-white/[0.01]">
-          <span className="font-semibold text-amber-500">⚠ no history</span><br />
-          Chat is wiped when<br />
-          everyone disconnects.
-        </div>
+              <UserCheck className="w-3.5 h-3.5 text-green-400" /> Callsign / Rename Ledger
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

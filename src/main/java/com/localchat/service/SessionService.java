@@ -1,5 +1,6 @@
 package com.localchat.service;
 
+import com.localchat.controller.ChatController;
 import com.localchat.model.ChatMessage;
 import com.localchat.model.ChatUser;
 import org.springframework.context.event.EventListener;
@@ -10,6 +11,8 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class SessionService {
@@ -17,28 +20,24 @@ public class SessionService {
     private final MessageStore messageStore;
     private final SimpMessageSendingOperations messaging;
 
-    // Constructor injection — preferred over @Autowired field injection
-    // Makes dependencies explicit and easier to test
     public SessionService(MessageStore messageStore,
                           SimpMessageSendingOperations messaging) {
         this.messageStore = messageStore;
         this.messaging = messaging;
     }
 
-    // Spring fires this automatically the moment a WebSocket connection
-    // is established — before the user sends any message
     @EventListener
     public void handleConnect(SessionConnectEvent event) {
         StompHeaderAccessor accessor =
             StompHeaderAccessor.wrap(event.getMessage());
 
         String sessionId = accessor.getSessionId();
-        String ip = (String) accessor.getSessionAttributes().get("ip");
-        String deviceType = (String) accessor.getSessionAttributes().get("deviceType");
-        String clientId = (String) accessor.getSessionAttributes().get("clientId");
-        if (clientId == null) clientId = sessionId; // Fallback
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        String ip = sessionAttributes != null ? (String) sessionAttributes.get("ip") : "127.0.0.1";
+        String deviceType = sessionAttributes != null ? (String) sessionAttributes.get("deviceType") : "DESKTOP";
+        String clientId = sessionAttributes != null ? (String) sessionAttributes.get("clientId") : null;
+        if (clientId == null) clientId = sessionId;
 
-        // Build the user object and store it immediately on connect
         ChatUser user = ChatUser.builder()
             .ip(ip)
             .displayName(ChatUser.deriveDisplayName(ip))
@@ -49,51 +48,50 @@ public class SessionService {
             .build();
 
         messageStore.addUser(user);
+        if (sessionId != null && clientId != null) {
+            ChatController.sessionToClientId.put(sessionId, clientId);
+        }
     }
 
-    // Spring fires this automatically when a WebSocket session closes
-    // This covers ALL disconnect scenarios:
-    //   - User closes the browser tab
-    //   - User loses Wi-Fi
-    //   - Browser crashes
-    //   - User navigates away
-    // No client-side action needed — the server handles everything
     @EventListener
     public void handleDisconnect(SessionDisconnectEvent event) {
         StompHeaderAccessor accessor =
             StompHeaderAccessor.wrap(event.getMessage());
 
         String sessionId = accessor.getSessionId();
+        if (sessionId == null) return;
 
-        // Look up the user before removing them so we know their name
-        ChatUser user = messageStore.getUser(sessionId);
-
-        if (user == null) {
-            // Session was never fully registered — nothing to clean up
-            return;
+        // 1. Purge from ChatController presence maps
+        String clientId = ChatController.sessionToClientId.remove(sessionId);
+        if (clientId != null) {
+            ChatController.activeUsers.remove(clientId);
+        } else {
+            // Check if any active user key matches sessionId
+            ChatController.activeUsers.remove(sessionId);
         }
 
-        // Remove user and check if the room is now empty
-        boolean roomEmpty = messageStore.removeUserAndCheckEmpty(sessionId);
+        // Broadcast updated presence immediately
+        List<Map<String, Object>> presenceList = ChatController.activeUsers.values().stream().toList();
+        messaging.convertAndSend("/topic/presence", (Object) presenceList);
 
-        // Broadcast a LEAVE notice to all remaining users
-        // If the room is empty this still runs but nobody receives it
-        ChatMessage leaveMessage = ChatMessage.builder()
-            .type(ChatMessage.Type.LEAVE)
-            .senderName(user.getDisplayName())
-            .senderIp(user.getIp())
-            .senderClientId(user.getClientId())
-            .timestamp(Instant.now())
-            .build();
+        // 2. Clean up messageStore
+        ChatUser user = messageStore.getUser(sessionId);
+        if (user != null) {
+            boolean roomEmpty = messageStore.removeUserAndCheckEmpty(sessionId);
 
-        messaging.convertAndSend("/topic/public", leaveMessage);
+            ChatMessage leaveMessage = ChatMessage.builder()
+                .type(ChatMessage.Type.LEAVE)
+                .senderName(user.getDisplayName())
+                .senderIp(user.getIp())
+                .senderClientId(user.getClientId())
+                .timestamp(Instant.now())
+                .build();
 
-        if (roomEmpty) {
-            // Log that history was wiped — useful during development
-            // to confirm the privacy guarantee is working
-            System.out.println(
-                "[LocalChat] Room empty — all message history wiped."
-            );
+            messaging.convertAndSend("/topic/public", (Object) leaveMessage);
+
+            if (roomEmpty) {
+                System.out.println("[LocalChat] Room empty — all message history wiped.");
+            }
         }
     }
 }

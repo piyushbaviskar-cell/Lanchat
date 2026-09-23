@@ -126,3 +126,51 @@
 /* Path animation is now handled by Framer Motion using only
    compositor-safe properties (opacity + transform/x/y).
    No CSS keyframes needed. */
+
+/* Tactical Base Reset & Dark Mode Enforcement */
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background-color: #0b0f19 !important;
+  color: #f1f5f9 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Fallback styling for tactical elements */
+button {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+}
+
+button:hover {
+  background-color: #334155;
+}
+
+input, textarea {
+  background-color: #141a29 !important;
+  color: #00ff66 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: monospace;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #00ff66 !important;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
+}
+/* Trigger HMR */

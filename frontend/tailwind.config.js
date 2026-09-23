@@ -8,6 +8,14 @@ export default {
   theme: {
     extend: {
       colors: {
+        tactical: {
+          base: '#0b0f19',
+          surface: '#141a29',
+          border: '#1e293b',
+          accent: '#00ff66',
+          danger: '#ff3344',
+          warning: '#ffaa00'
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
